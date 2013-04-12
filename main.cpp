@@ -12,61 +12,58 @@ using namespace cv;
 #include <cmath>
 
 
-const int NUM_FREQ = 2*1024;
-float _freqs[ NUM_FREQ ];
+// tone frequency (slider)
+int freq=83;  
 
-FFT fft;
-int freq=37;
-//struct CriticalSection : public CRITICAL_SECTION 
-//{
-//	CriticalSection()	{ InitializeCriticalSection(this); 	}	
-//	~CriticalSection() 	{ DeleteCriticalSection (this);    	}
-//
-//	void lock()			{ EnterCriticalSection( this );		}
-//	void unlock()		{ LeaveCriticalSection( this );		}
-//} mute;
-//
+// fft buffers
+const int NUM_FREQ = 2*1024; 
 
-unsigned t = 0;
-int inout( void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
-           double streamTime, RtAudioStreamStatus status, void * )
+//
+// callback data
+//
+struct Data 
 {
-    if ( status )
-    std::cout << "Stream underflow detected!" << std::endl;
+    float freqs[ NUM_FREQ ];    
+    FFT fft;
+    unsigned ticks;
+};
 
-    // Write interleaved audio data.
+
+int inout( void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
+           double streamTime, RtAudioStreamStatus status, void * data)
+{
+    Data * d = (Data*)data;
+
+    // Write sine data.
     float f = float(1+freq)/100.0;  
     float *buffer = (float *) outputBuffer;
     for ( unsigned int i=0; i<nBufferFrames; i++ ) 
     {
-        float v = float(sin(double(f*t)));
+        float v = float(sin(double(f*d->ticks)));
         *buffer ++ = v;
-        t ++;
+        d->ticks ++;
     }
 
-
-//	if ( nBufferFrames < NUM_FREQ*2 ) return 0;;
-//    mute.lock();
-
-	fft.time_to_frequency_domain( (float*)inputBuffer, _freqs );
+    // process mic input
+	d->fft.time_to_frequency_domain( (float*)inputBuffer, d->freqs );
     float m = 0;
     int mi=-1;
-    for ( int i=512; i<NUM_FREQ; i++ )
+    for ( int i=64; i<NUM_FREQ; i++ )
     {
-        if ( _freqs[i] > m ) 
+        if ( d->freqs[i] > m ) 
         {
-            m = _freqs[i];
+            m = d->freqs[i];
             mi = i;
         }
     }
     std::cerr << mi << " " << m << std::endl;
-  //  mute.unlock();
     return 0;
 }
 
 int main()
 {
-	fft.Init(NUM_FREQ, NUM_FREQ, 1, 1.0f);
+    Data data;
+	data.fft.Init(NUM_FREQ, NUM_FREQ, 1, 8.0f);
 
     RtAudio adac;
     if ( adac.getDeviceCount() < 1 ) 
@@ -75,7 +72,6 @@ int main()
         exit( 0 );
     }
 
-    // Set the same number of channels for both input and output.
     unsigned int bufferFrames = NUM_FREQ*2;
     RtAudio::StreamParameters iParams, oParams;
     iParams.deviceId  = 2; // 
@@ -85,7 +81,7 @@ int main()
 
     try 
     {
-        adac.openStream( &oParams, &iParams, RTAUDIO_FLOAT32, 44100, &bufferFrames, &inout, 0 );
+        adac.openStream( &oParams, &iParams, RTAUDIO_FLOAT32, 44100, &bufferFrames, &inout, &data );
     }
     catch ( RtError& e ) 
     {
@@ -104,16 +100,13 @@ int main()
         while(k!=27)
         {
             img = 0;
-            //mute.lock();
             int offset=500;
             for( int i=0,zend=400; i<zend; i++ )
             {
-                line(img,Point(i,int(_freqs[offset+i]*300000)),Point(i+1,int(_freqs[offset+i+1]*300000)),Scalar(0,0,200));
+                line(img,Point(i,int(data.freqs[offset+i]*300000)),Point(i+1,int(data.freqs[offset+i+1]*300000)),Scalar(0,0,200));
             }
             imshow("fft",img);
             k = waitKey(40);
-           // Sleep(100);
-            //mute.unlock();
         }
         // Stop the stream.
         adac.stopStream();
