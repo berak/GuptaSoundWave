@@ -3,45 +3,25 @@
 #include <iostream>
 #include <cstdlib>
 #include <cstring>
+#include <cmath>
 
-
-// Two-channel sawtooth wave generator.
-int saw( void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
-         double streamTime, RtAudioStreamStatus status, void *userData )
+unsigned t = 0;
+int inout( void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
+           double streamTime, RtAudioStreamStatus status, void * )
 {
-    unsigned int i, j;
-    double *buffer = (double *) outputBuffer;
-    double *lastValues = (double *) userData;
-
     if ( status )
     std::cout << "Stream underflow detected!" << std::endl;
 
     // Write interleaved audio data.
-    for ( i=0; i<nBufferFrames; i++ ) 
+    int f = 100;  
+    double *buffer = (double *) outputBuffer;
+    for ( unsigned int i=0; i<nBufferFrames; i++ ) 
     {
-        for ( j=0; j<2; j++ ) 
-        {
-            *buffer++ = lastValues[j];
-
-            lastValues[j] += 0.005 * (j+1+(j*0.1));
-            if ( lastValues[j] >= 1.0 ) lastValues[j] -= 2.0;
-        }
+        double v = sin(double(f*t));
+        *buffer ++ = v;
+        *buffer ++ = v;
+        t ++;
     }
-
-  return 0;
-}
-
-// Pass-through function.
-int inout( void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
-           double streamTime, RtAudioStreamStatus status, void *data )
-{
-    saw( outputBuffer, inputBuffer, nBufferFrames, streamTime, status, data );
-    // Since the number of input and output channels is equal, we can do
-    // a simple buffer copy operation here.
-    if ( status ) std::cout << "Stream over/underflow detected." << std::endl;
-
-//    unsigned long *bytes = (unsigned long *) data;
-//    memcpy( outputBuffer, inputBuffer, *bytes );
     return 0;
 }
 
@@ -55,7 +35,7 @@ int main()
     }
 
     // Set the same number of channels for both input and output.
-    unsigned int bufferBytes, bufferFrames = 512;
+    unsigned int bufferBytes, bufferFrames = 512*44;
     RtAudio::StreamParameters iParams, oParams;
     iParams.deviceId = 2; // first available device
     iParams.nChannels = 1; // mono mic
@@ -64,7 +44,7 @@ int main()
 
     try 
     {
-        adac.openStream( &oParams, &iParams, RTAUDIO_SINT32, 44100, &bufferFrames, &inout, (void *)&bufferBytes );
+        adac.openStream( &oParams, &iParams, RTAUDIO_FLOAT64, 44100, &bufferFrames, &inout, 0 );
     }
     catch ( RtError& e ) 
     {
@@ -72,7 +52,7 @@ int main()
         exit( 0 );
     }
 
-    bufferBytes = bufferFrames * 2 * 4;
+    bufferBytes = bufferFrames * 2 * 128;
 
     try 
     {
