@@ -40,7 +40,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="E:\dxsdk\Include;E:\code\gupta\fft;E:\code\gupta\rtaudio;"
+				AdditionalIncludeDirectories="E:\dxsdk\Include;E:\code\gupta\fft;E:\code\gupta\rtaudio;E:\code\opencv\build\include;"
 				PreprocessorDefinitions="__WINDOWS_DS__"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -59,8 +59,8 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="dsound.lib"
-				AdditionalLibraryDirectories="E:\dxsdk\Lib\x86"
+				AdditionalDependencies="dsound.lib opencv_contrib249d.lib opencv_core249d.lib opencv_highgui249d.lib opencv_imgproc249d.lib"
+				AdditionalLibraryDirectories="E:\dxsdk\Lib\x86;E:\code\opencv\build\lib\Debug"
 				GenerateDebugInformation="true"
 				TargetMachine="1"
 			/>
@@ -113,7 +113,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="E:\dxsdk\Include;E:\code\gupta\fft;E:\code\gupta\rtaudio;"
+				AdditionalIncludeDirectories="E:\dxsdk\Include;E:\code\gupta\fft;E:\code\gupta\rtaudio;E:\code\opencv\build\include;"
 				PreprocessorDefinitions="__WINDOWS_DS__"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -131,8 +131,8 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="dsound.lib"
-				AdditionalLibraryDirectories="E:\dxsdk\Lib\x86"
+				AdditionalDependencies="dsound.lib opencv_core249.lib opencv_features2d249.lib opencv_flann249.lib opencv_haartraining_engine.lib opencv_highgui249.lib opencv_imgproc249.lib"
+				AdditionalLibraryDirectories="E:\dxsdk\Lib\x86;E:\code\opencv\build\lib\Release;"
 				GenerateDebugInformation="true"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
