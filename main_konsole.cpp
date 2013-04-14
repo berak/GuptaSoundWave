@@ -1,10 +1,6 @@
-//#include "rt_defs.h"
 #include "RtAudio.h"
 #include "fft.h"
 
-#include <opencv2/opencv.hpp>
-#include <opencv2/highgui/highgui.hpp>
-using namespace cv;
 
 #include <iostream>
 #include <cstdlib>
@@ -15,8 +11,12 @@ using namespace cv;
 // tone frequency (slider)
 int freq=100;  
 
-int lthresh=10;  
-int rthresh=40;  
+int scale=5000;
+int steps = 20;
+
+int lthresh=23;  
+int rthresh=39;  
+
 
 // fft buffers
 const int NUM_FREQ = 2*1024; 
@@ -29,6 +29,13 @@ struct Data
     FFT fft;
     float freqs[ NUM_FREQ ];    
     unsigned ticks;
+
+
+    int value( int id, int scale=3000 ) const 
+    {
+        return int(sqrt(freqs[id])*scale);
+        //return int(log(freqs[id])*scale);
+    }
 };
 
 
@@ -55,8 +62,17 @@ int inout( void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
     return 0;
 }
 
-int main()
+
+int main(int argc, char ** argv)
 {
+    for ( int i = 1; i<argc-1; i++ )
+    {
+        if ( !strcmp(argv[i],"f") ) { freq=atoi(argv[++i]); continue; }
+        if ( !strcmp(argv[i],"l") ) { lthresh=atoi(argv[++i]); continue; }
+        if ( !strcmp(argv[i],"r") ) { rthresh=atoi(argv[++i]); continue; }
+        if ( !strcmp(argv[i],"s") ) { scale=atoi(argv[++i]); continue; }
+        if ( !strcmp(argv[i],"t") ) { step=atoi(argv[++i]); continue; }
+    }
     unsigned int bufferFrames = NUM_FREQ*2;
 
     Data data;
@@ -84,20 +100,14 @@ int main()
         e.printMessage();
         exit( 0 );
     }
-
-    namedWindow("fft",0);
-    createTrackbar("tone", "fft",&freq,200);
-    createTrackbar("left", "fft",&lthresh,100);
-    createTrackbar("right", "fft",&rthresh,100);
     try 
     {
         adac.startStream();
 
-        Mat img(400,400,CV_8UC3);
         int k = 0;
         int kcen = 658;
         int lmean=0,rmean=0;
-        while(k!=27)
+        while(true)
         {
             // find the global max:
             float m = 0;
@@ -112,17 +122,14 @@ int main()
             }
             kcen += mi;
             kcen /= 2;
-            int steps = 20;
             int lsum=0,rsum=0;
             for( int i=-steps; i<-2; i++ )
             {
-                int y = int(data.freqs[kcen+i]*300000);
-                lsum += y;
+                lsum += data.value(kcen+i,scale);
             }
             for( int i=2; i<steps; i++ )
             {
-                int y = int(data.freqs[kcen+i]*300000);
-                rsum += y;
+                rsum += data.value(kcen+i,scale);
             }
             rsum /= (steps-2);
             lsum /= (steps-2);
@@ -133,21 +140,10 @@ int main()
                 rc='r';
             if ( ld>lthresh )
                 lc='l';
-            std::cerr << mi << " " << char(lc) << " " << char(rc) << " " << m << std::endl;
 
-            img = 0;
-            int offset = mi - 200;
-            for( int i=0; i<400; i++ )
-            {
-                line(img,Point(i,int(data.freqs[offset+i]*300000)),Point(i+1,int(data.freqs[offset+i+1]*300000)),Scalar(0,0,200));
-            }
-            for( int i=-steps; i<steps; i++ )
-            {
-                int y = int(data.freqs[kcen+i]*300000);
-                rectangle(img,Rect(200+i*10,0,10,y),Scalar(200,0,0));
-            }
-            imshow("fft",img);
-            k = waitKey(40);
+            if ( ld>lthresh || ld>lthresh)
+                std::cerr << char(lc) << " " << char(rc) << std::endl;
+            Sleep(100);
         }
         // Stop the stream.
         adac.stopStream();
