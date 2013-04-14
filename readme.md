@@ -1,9 +1,11 @@
 
----
 doppler effect based movement detection from audio
 
-as described in [GuptaSoundWave](http://research.microsoft.com/en-us/um/redmond/groups/cue/publications/GuptaSoundWaveCHI2012.pdf)
+as described in [GuptaSoundWave](http://research.microsoft.com/en-us/um/redmond/groups/cue/soundwave/)
 
-can do short taps in either direction, or 
-uses rtaudio and nullsoft fft
+detects motion away or towards the microphone, taps, or long strides
+
+
+---
+using rtaudio and nullsoft fft, optional opencv gui
 
