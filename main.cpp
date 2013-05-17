@@ -10,13 +10,13 @@
 
 
 // tone frequency (slider)
-int freq = 125;  
+int freq = 145;  
 
 int scale = 5000;
 int steps = 20;
 
 // trigger values for approach and retreat
-int lthresh = 23;  
+int lthresh = 27;  
 int rthresh = 39;  
 
 // device ids
@@ -72,6 +72,10 @@ int inout( void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
     return 0;
 }
 
+inline int ipol(int a,int b,int t)
+{
+    return ( a*(t-1) + b ) / t;
+}
 
 int main(int argc, char ** argv)
 {
@@ -143,8 +147,7 @@ int main(int argc, char ** argv)
                     mi = i;
                 }
             }
-            kcen += mi;
-            kcen /= 2;
+            kcen = ipol(kcen,mi,4);
             // get the mean of the lower and the higher neighbours
             int lsum=0,rsum=0;
             for( int i=-steps; i<-2; i++ )
@@ -159,6 +162,8 @@ int main(int argc, char ** argv)
             lsum /= (steps-2);
             int rd = rsum-rmean;
             int ld = lsum-lmean;
+            lmean=ipol(lmean,lsum,256);
+            rmean=ipol(rmean,rsum,256);
             int lc=' ',rc=' ';
             if ( rd>rthresh )
                 rc='r';
